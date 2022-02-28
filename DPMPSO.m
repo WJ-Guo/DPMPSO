@@ -20,7 +20,7 @@
 %                     Comments    :   It uses psoOptions structure now. More organized.
 %  
 %                     see also: get_psoOptions
-function [fxmin, xmin, Swarm, accept_fes, success, history] = HMPSO(psoOptions,T,initSWARM,initStep)
+function [fxmin, xmin, Swarm, accept_fes, success, history] = DPMPSO(psoOptions,T,initSWARM,initStep)
 %     need init_exemplers ,updating_exmplersCL ,updating_exmplersCLformerged,init_DLPE,update_DLPE
 			%Initializations
 			if nargin == 0
@@ -40,14 +40,14 @@ function [fxmin, xmin, Swarm, accept_fes, success, history] = HMPSO(psoOptions,T
 			end
 			%End Display initialization
 				 
-			% ³õÊ¼»¯ÖÖÈº
+			% åˆå§‹åŒ–ç§ç¾¤
 			Swarm = rand(psoOptions.Vars.SwarmSize, psoOptions.Vars.Dim)*(psoOptions.Obj.ub-psoOptions.Obj.lb) + psoOptions.Obj.lb; 
 			me = psoOptions.Vars.max_gen;
 			[SwarmSize,Dim]=size(Swarm);
 		    % Inertia parameter : Weight C1 C2
 			Weight = 0.9-(1:me)*0.5/me;
 			 Weight1 = 1.5-(1:me)*1/me;
-            CR = repmat(0.8,1,Dim);  %% ³õÊ¼»¯ÖØÖÃ¸ÅÂÊ
+            CR = repmat(0.8,1,Dim);  %% åˆå§‹åŒ–é‡ç½®æ¦‚ç‡
 			c1 = 1.49445.*ones(me,1);
 			c2 = 1.49445.*ones(me,1);
 			flowrate = 5;
@@ -55,14 +55,14 @@ function [fxmin, xmin, Swarm, accept_fes, success, history] = HMPSO(psoOptions,T
 			% CEC parameter
 			[M1,M2,shifto,lambda10,lambda100]= functionparameter(SwarmSize,Dim);
 			
-            % Í³¼ÆFES 
+            % ç»Ÿè®¡FES 
 			success = 0; % Success Flag
 			f2eval = psoOptions.Obj.f2eval;
 			FEs = 0; % Function evaluations' counter
-			G = 0; % µü´ú´ÎÊı
+			G = 0; % è¿­ä»£æ¬¡æ•°
 			k=0;
             accuracy = psoOptions.Vars.Threshold;
-            maxruntime = psoOptions.Vars.Dim *10000; % ÒÔÔËĞĞ´ÎÊı¼ÆËãÎª±ê×¼
+            maxruntime = psoOptions.Vars.Dim *10000; % ä»¥è¿è¡Œæ¬¡æ•°è®¡ç®—ä¸ºæ ‡å‡†
             
 			% init global
 			fSwarm = feval(f2eval,Swarm,M1,M2,shifto,lambda10,lambda100);
@@ -74,10 +74,10 @@ function [fxmin, xmin, Swarm, accept_fes, success, history] = HMPSO(psoOptions,T
 			gbest_pos = pbest_pos(gbest_id,:);
 			history = [FEs, gbest_val];
 			
-			%% »®·Ö×ÓÈº, ÒÔÏà¶Ô¾àÀëÓëÊÊÓ¦¶ÈÎª±ê×¼ÉèÖÃ±êÇ©
+			%% åˆ’åˆ†å­ç¾¤, ä»¥ç›¸å¯¹è·ç¦»ä¸é€‚åº”åº¦ä¸ºæ ‡å‡†è®¾ç½®æ ‡ç­¾
 			[subSwarm,cl] = divswarm_fortest(Swarm,fSwarm,M1,M2,shifto,lambda10,lambda100, topsize_ini);
 			subSwarmSize = size(subSwarm,2);
-			%%%  Éè¶¨ËÙ¶È±ß½ç
+			%%%  è®¾å®šé€Ÿåº¦è¾¹ç•Œ
 			VRmin = psoOptions.Obj.lb;
 			VRmax = psoOptions.Obj.ub;
 			mv=0.2*(VRmax-VRmin);
@@ -89,26 +89,26 @@ function [fxmin, xmin, Swarm, accept_fes, success, history] = HMPSO(psoOptions,T
 				 num_g(i) = size(pos_g{i},1);
 				 % vel_g{i} = v_min(1:num_g(i),:) + (v_max(1:num_g(i),:) - v_min(1:num_g(i),:)).*rand(num_g(i),Dim);
 				 vel_g{i}= v_min(1:num_g(i),:)+2.*v_max(1:num_g(i),:).*rand(num_g(i),Dim);    
-				 % ³õÊ¼»¯Ã¿¸ö×ÓÈºµÄ×îÓÅÖµ
+				 % åˆå§‹åŒ–æ¯ä¸ªå­ç¾¤çš„æœ€ä¼˜å€¼
 				 pbest_pos_g{i} = pos_g{i};
 				 pbest_val_g{i} = pbest_val(find(cl==i),:);
 				 [gbest_val_g(i),gbest_id(i)] = min(pbest_val_g{i});
 				 gbest_pos_g{i} = pbest_pos_g{i}(gbest_id(i),:);
 				 gbest_val_g_r(i) = gbest_val_g(i);	
 				 stop{i} = zeros(num_g(i),1); ;
-				 %%% ´¢´æÃ¿¸ö×ÓÈºĞèÒªÖØÖÃµÄÁ£×ÓĞÅÏ¢ %%%
+				 %%% å‚¨å­˜æ¯ä¸ªå­ç¾¤éœ€è¦é‡ç½®çš„ç²’å­ä¿¡æ¯ %%%
 				 [gworst_val_g(i),gworst_id(i)] = max(pbest_val_g{i});
 				 gworst_pos_g{i} = pbest_pos_g{i}(gworst_id(i),:);
-				 %%% ÓÃÓÚ¼ÆËãÃ¿¸öÎ¬¶ÈµÄÖØÖÃ´ÎÊı %%%
+				 %%% ç”¨äºè®¡ç®—æ¯ä¸ªç»´åº¦çš„é‡ç½®æ¬¡æ•° %%%
                  CR_count{i}=zeros(num_g(i),Dim);
 				 
-				%%%%  ÁÚ¾Ó %%%%%%%%
-					 % ¼ì²éÃ¿¸öÁ£×ÓÊÇ·ñ¸üĞÂ
+				%%%%  é‚»å±… %%%%%%%%
+					 % æ£€æŸ¥æ¯ä¸ªç²’å­æ˜¯å¦æ›´æ–°
 					 obj_func_slope_g{i}= zeros(num_g(i),1); 
 					 num1=max(num_g);
 					 t=0:1/(num_g(i) - 1):1;t=5.*t;
 					 Pc{i}=0.0+(0.5-0.0).*(exp(t)-exp(t(1)))./(exp(t(num_g(i)))-exp(t(1)));
-					 % ³õÊ¼»¯Ã¿¸öÁ£×ÓµÄ×îºÃÁÚ¾Ó
+					 % åˆå§‹åŒ–æ¯ä¸ªç²’å­çš„æœ€å¥½é‚»å±…
 					 fri_best_pos_g{i} = init_fri(  pbest_pos_g{i} ,pbest_val_g{i}',Pc{i},num_g(i),Dim);
 				 
 			
@@ -134,23 +134,23 @@ while FEs < maxruntime
 	
 	for i=1:subSwarmSize
 	    num_g(i) = size(pos_g{i},1);
-	    %%%%%%%%%%  ¸üĞÂÁÚ¾Ó  %%%%%%%
+	    %%%%%%%%%%  æ›´æ–°é‚»å±…  %%%%%%%
 		
 		[fri_best_pos_g{i},obj_func_slope_g{i}] = updating_fri(fri_best_pos_g{i},pbest_pos_g{i} ,pbest_val_g{i}',Pc{i},num_g(i),Dim,obj_func_slope_g{i}); 
-        A = repmat(gbest_pos, SwarmSize, 1);  %% È«¾Ö×îÓÅ
+        A = repmat(gbest_pos, SwarmSize, 1);  %% å…¨å±€æœ€ä¼˜
 		%%%%%%%%% different stategies to update velocity and position  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 		if i == 1
 			vel_g{i} =  Weight(k) .* vel_g{i} + 1.49445 .* rand(num_g(i),Dim).*(fri_best_pos_g{i} - pos_g{i}) + 1.*1.49445.*rand(num_g(i),Dim).* (A(1:num_g(i),:)-pos_g{i});
 %           vel_g{i} = 0.5 .* vel_g{i} + 1.49445 .*rand(num_g(i),Dim).*(pbest_pos_g{i}- pos_g{i}) + 1.49445 .*rand(num_g(i),Dim).* (A(1:num_g(i),:)-pos_g{i});
         else
-			vel_g{i} = Weight(k) .* vel_g{i} + 1.49445 .* rand(num_g(i),Dim).*(fri_best_pos_g{i} - pos_g{i}); %ÁÚÓòĞÍ
+			vel_g{i} = Weight(k) .* vel_g{i} + 1.49445 .* rand(num_g(i),Dim).*(fri_best_pos_g{i} - pos_g{i}); %é‚»åŸŸå‹
 		end
-		%¼ì²é±ß½ç
+		%æ£€æŸ¥è¾¹ç•Œ
 		vel_g{i}=(vel_g{i} < v_min(1:num_g(i),:)).*v_min(1:num_g(i),:)+(vel_g{i} >= v_min(1:num_g(i),:)).*vel_g{i};
 		vel_g{i}= (vel_g{i} > v_max(1:num_g(i),:)).*v_max(1:num_g(i),:)+(vel_g{i} <= v_max(1:num_g(i),:)).*vel_g{i};
-		%¸üĞÂÎ»ÖÃ
+		%æ›´æ–°ä½ç½®
 		pos_g{i} = pos_g{i} + vel_g{i};	
-		%¸üĞÂ¾Ö²¿ÓëÈ«¾Ö×îÓÅ,fSwarmÊÇÁĞÏòÁ¿
+		%æ›´æ–°å±€éƒ¨ä¸å…¨å±€æœ€ä¼˜,fSwarmæ˜¯åˆ—å‘é‡
 		fSwarm_g{i} = feval(f2eval,pos_g{i},M1,M2,shifto,lambda10,lambda100);
 		FEs = FEs + num_g(i); 
 		% Updating the best position for each particle
@@ -159,19 +159,19 @@ while FEs < maxruntime
 		pbest_val_g{i}(find(changeRows)) = fSwarm_g{i}(find(changeRows));
 		pbest_pos_g{i}(find(changeRows), :) = pos_g{i}(find(changeRows), :);
 		[gbest_val_g(i),gbest_id(i)] = min(pbest_val_g{i});
-		%% ¼ÇÂ¼Í£ÖÍĞÅÏ¢ %%%%%%%%%%%%%
+		%% è®°å½•åœæ»ä¿¡æ¯ %%%%%%%%%%%%%
 		
 		obj_func_slope_g{i}(find(~changeRows))=obj_func_slope_g{i}(find(~changeRows))+1;
 		stop{i}(find(~changeRows)) = stop{i}(find(~changeRows))+1;
 		stop{i}(find(changeRows)) = 0; 
 		
-		%% ¸üĞÂ×ÓÈº×îÓÅ  %%%%%%%%%%%%%%%
+		%% æ›´æ–°å­ç¾¤æœ€ä¼˜  %%%%%%%%%%%%%%%
 		if  gbest_val_g_r(i) > gbest_val_g(i);	
 		    gbest_val_g_r(i) = gbest_val_g(i);	
 			gbest_pos_g{i} = pbest_pos_g{i}(gbest_id(i),:);
 		end	  
 		
-		%% ¸üĞÂÈ«¾Ö×îÓÅ  %%%%%%%%%%%%%%%
+		%% æ›´æ–°å…¨å±€æœ€ä¼˜  %%%%%%%%%%%%%%%
 		
 		if gbest_val > gbest_val_g_r(i)
 		   gbest_val = gbest_val_g_r(i);
@@ -179,8 +179,8 @@ while FEs < maxruntime
 		end 
 		   
 			
-		%%%%%%%%%%%%%%%%%%%%% ½»²æÖØÖÃ²ßÂÔ %%%%%%%%%%%%%%%%%%%%%%%%	
-        %% ½«Ã¿²ã¶à´ú²»¸üĞÂµÄµÄÁ£×ÓÓëÈ«¾Ö×îÓÅ½»²æ£¬²¢°´ÕÕÊÊÓ¦¶È·ÖÅäµ½²»Í¬²ã¼¶ %%%
+		%%%%%%%%%%%%%%%%%%%%% äº¤å‰é‡ç½®ç­–ç•¥ %%%%%%%%%%%%%%%%%%%%%%%%	
+        %% å°†æ¯å±‚å¤šä»£ä¸æ›´æ–°çš„çš„ç²’å­ä¸å…¨å±€æœ€ä¼˜äº¤å‰ï¼Œå¹¶æŒ‰ç…§é€‚åº”åº¦åˆ†é…åˆ°ä¸åŒå±‚çº§ %%%
 
         resetposid = [];
         [gworst_val_g(i),gworst_id(i)] = max(pbest_val_g{i});
@@ -188,42 +188,42 @@ while FEs < maxruntime
 		if i == 1
 			resetposid = ordval(1);  
 		else
-			resetposid = ordval(1);     %¿Éµ÷½ÚÃ¿¸ö×ÓÈºÖØÖÃÁ£×Ó¸öÊı
+			resetposid = ordval(1);     %å¯è°ƒèŠ‚æ¯ä¸ªå­ç¾¤é‡ç½®ç²’å­ä¸ªæ•°
         end
         
 		for j = 1:size(resetposid)
             
             if  stop{i}(resetposid(j)) > 30
-                %%% 1.ºÍÈ«¾Ö×îÓÅÁ£×ÓËæ»ú½»²æ %%%%
+                %%% 1.å’Œå…¨å±€æœ€ä¼˜ç²’å­éšæœºäº¤å‰ %%%%
                 gworst_pos_g{i} = pbest_pos_g{i}(resetposid(j),:);
                 CR_used = CR - 0.05.*CR_count{i}(resetposid(j),:);
                 changecr = rand(1,Dim) < CR_used;
                 gworst_pos_g{i}(find(changecr)) = gbest_pos(find(changecr)); 
-                %%%%%%%%%%%%%%%%  Èç¹û½á¹û½ÏºÃ£¬Ôò²ÉÓÃ%%%%%%%%%%%%%
+                %%%%%%%%%%%%%%%%  å¦‚æœç»“æœè¾ƒå¥½ï¼Œåˆ™é‡‡ç”¨%%%%%%%%%%%%%
                 changeval = feval(f2eval,gworst_pos_g{i},M1,M2,shifto,lambda10,lambda100);   
                 FEs = FEs + 1; 
                 if changeval < gworst_val_g(i)
                    CR_count{i}(resetposid(j),find(changecr))= CR_count{i}(resetposid(j),find(changecr))+1; 
                    pbest_pos_g{i}(resetposid(j),:) = gworst_pos_g{i};
-                   %²ßÂÔÓĞĞ§µÄ»°£¬Ôò½«ÖØÖÃºóµÄÁ£×ÓÖÍÁôÖµÖÃÁã
+                   %ç­–ç•¥æœ‰æ•ˆçš„è¯ï¼Œåˆ™å°†é‡ç½®åçš„ç²’å­æ»ç•™å€¼ç½®é›¶
                    stop{i}(resetposid(j)) = 0;
                 end   
-                %%% ÈôÖØÖÃÁ£×ÓÓÅÓÚÈ«¾Ö×îÓÅÇÒÎ»ÓÚµ×²ãÈº£¬Ôò½«ÆäÓë¶¥²ãÁ£×ÓÖĞ×î²îµÄ½»»»
+                %%% è‹¥é‡ç½®ç²’å­ä¼˜äºå…¨å±€æœ€ä¼˜ä¸”ä½äºåº•å±‚ç¾¤ï¼Œåˆ™å°†å…¶ä¸é¡¶å±‚ç²’å­ä¸­æœ€å·®çš„äº¤æ¢
                 if i==2&&changeval < gbest_val
                    gbest_val = changeval;
                    gbest_pos = gworst_pos_g{i};
                    pbest_pos_g{i}(resetposid(j),:) = pbest_pos_g{1} (gworst_id(1),:);
                    pbest_pos_g{1} (gworst_id(1),:) = gworst_pos_g{i};
                 end   
-               %%%% µ±¸ÃÎ¬¶ÈÖØÖÃ¸ÅÂÊĞ¡ÓÚ0.3Ê±£¬½«ÆäÖØÖÃ´ÎÊı¹éÁã
+               %%%% å½“è¯¥ç»´åº¦é‡ç½®æ¦‚ç‡å°äº0.3æ—¶ï¼Œå°†å…¶é‡ç½®æ¬¡æ•°å½’é›¶
                    CR_count{i}(CR_count{i}>8)=0; 
             end
 	     end		
 
 		
 	end
-		%%%%%%%%%%%%%%%%%%%%% Á÷¶¯²ßÂÔ %%%%%%%%%%%%%%%%%%%%%%%%
-		%% ½«µ×²ãÓëÖĞ²ãÁ£×Ó×îºÃµÄÁ£×ÓÂıÂıÁ÷Ïò¶¥²ã£¬ÒÔÌá¸ßºóÆÚµÄ¿ª²ÉÄÜÁ¦ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+		%%%%%%%%%%%%%%%%%%%%% æµåŠ¨ç­–ç•¥ %%%%%%%%%%%%%%%%%%%%%%%%
+		%% å°†åº•å±‚ä¸ä¸­å±‚ç²’å­æœ€å¥½çš„ç²’å­æ…¢æ…¢æµå‘é¡¶å±‚ï¼Œä»¥æé«˜åæœŸçš„å¼€é‡‡èƒ½åŠ› %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 		if FEs > maxruntime/2 && (mod(G, 1000)==0) && num_g(2) > topsize_ini
 		clear swarm vel pbest_pos pbest_val;
 		   Swarm = [pos_g{1};pos_g{2}];
@@ -231,8 +231,8 @@ while FEs < maxruntime
 		   pbest_pos = [pbest_pos_g{1};pbest_pos_g{2}];
 		   pbest_val = [pbest_val_g{1};pbest_val_g{2}];
 		
-		   fprintf(' Á£×ÓÁ÷¶¯,µ×²ãÈº¹æÄ£Îª %d ',num_g(2));
-		   %%% ½«µ×²ã½ÏÓÅµÄÁ£×ÓÂıÂıÁ÷Ïò¶¥²ã%%%
+		   fprintf(' ç²’å­æµåŠ¨,åº•å±‚ç¾¤è§„æ¨¡ä¸º %d ',num_g(2));
+		   %%% å°†åº•å±‚è¾ƒä¼˜çš„ç²’å­æ…¢æ…¢æµå‘é¡¶å±‚%%%
 			[subSwarm,cl] = divswarm_fortest(Swarm,pbest_val',M1,M2,shifto,lambda10,lambda100,num_g(1)+topsize_ini);
 
 		    for i=1:subSwarmSize			 
@@ -246,16 +246,16 @@ while FEs < maxruntime
 				 pbest_val_g{i} = pbest_val(lab,:);
 				 [gbest_val_g(i),gbest_id(i)] = min(pbest_val_g{i}); 
 				 stop{i} = zeros(num_g(i),1); ;
-				 %%% ÓÃÓÚ¼ÆËãÃ¿¸öÎ¬¶ÈµÄÖØÖÃ´ÎÊı %%%
+				 %%% ç”¨äºè®¡ç®—æ¯ä¸ªç»´åº¦çš„é‡ç½®æ¬¡æ•° %%%
                  CR_count{i}=zeros(num_g(i),Dim);
 				 
-				%%%%  ÁÚ¾Ó %%%%%%%%
-					 % ¼ì²éÃ¿¸öÁ£×ÓÊÇ·ñ¸üĞÂ
+				%%%%  é‚»å±… %%%%%%%%
+					 % æ£€æŸ¥æ¯ä¸ªç²’å­æ˜¯å¦æ›´æ–°
 					 obj_func_slope_g{i}= zeros(num_g(i),1); 
 					 num1=max(num_g);
 					 t=0:1/(num_g(i) - 1):1;t=5.*t;
 					 Pc{i}=0.0+(0.5-0.0).*(exp(t)-exp(t(1)))./(exp(t(num_g(i)))-exp(t(1)));
-					 % ³õÊ¼»¯Ã¿¸öÁ£×ÓµÄ×îºÃÁÚ¾Ó
+					 % åˆå§‹åŒ–æ¯ä¸ªç²’å­çš„æœ€å¥½é‚»å±…
 					 fri_best_pos_g{i} = init_fri(pbest_pos_g{i} ,pbest_val_g{i}',Pc{i},num_g(i),Dim);
 			end
 		   
